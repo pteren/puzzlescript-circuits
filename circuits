@@ -1,0 +1,396 @@
+title i do not know what i am doing
+author pteren <3
+homepage www.puzzlescript.net
+
+again_interval 0.04
+
+========
+OBJECTS
+========
+
+Background
+#2f005f
+
+and_gate a
+pink red
+.000.
+00000
+00100
+00000
+.000.
+
+nand_gate n
+pink red
+00000
+00000
+00100
+00000
+00000
+
+on_token (indicates that a gate is outputting power)
+green
+.....
+.....
+..0..
+.....
+.....
+
+ghost_on_token (remembers that a gate was on at the start of the turn)
+transparent
+
+dead_wire_U
+red
+..0..
+..0..
+..0..
+.....
+.....
+
+dead_wire_D
+red
+.....
+.....
+..0..
+..0..
+..0..
+
+dead_wire_L
+red
+.....
+.....
+000..
+.....
+.....
+
+dead_wire_R
+red
+.....
+.....
+..000
+.....
+.....
+
+live_wire_U
+green
+..0..
+..0..
+..0..
+.....
+.....
+
+live_wire_D
+green
+.....
+.....
+..0..
+..0..
+..0..
+
+live_wire_L
+green
+.....
+.....
+000..
+.....
+.....
+
+live_wire_R
+green
+.....
+.....
+..000
+.....
+.....
+
+junction
+gray
+.....
+.0.0.
+..0..
+.0.0.
+.....
+
+input_U
+white
+..0..
+.....
+.....
+.....
+.....
+
+input_D
+white
+.....
+.....
+.....
+.....
+..0..
+
+input_L
+white
+.....
+.....
+0....
+.....
+.....
+
+input_R
+white
+.....
+.....
+....0
+.....
+.....
+
+output_U
+black
+..0..
+.....
+.....
+.....
+.....
+
+output_D
+black
+.....
+.....
+.....
+.....
+..0..
+
+output_L
+black
+.....
+.....
+0....
+.....
+.....
+
+output_R
+black
+.....
+.....
+....0
+.....
+.....
+
+battery_on
+yellow
+
+battery_off b
+blue
+
+player_hovering p
+orange
+0...0
+.....
+.....
+.....
+0...0
+
+player_placing
+orange
+0...0
+.0.0.
+.....
+.0.0.
+0...0
+
+player_configuring
+lightgreen
+0...0
+.....
+.....
+.....
+0...0
+
+=======
+LEGEND
+=======
+
+. = Background
+
+battery = battery_on or battery_off
+gate = and_gate or nand_gate
+
+component = battery or gate
+
+IO_U = input_U or output_U
+IO_D = input_D or output_D
+IO_L = input_L or output_L
+IO_R = input_R or output_R
+
+wire_U = dead_wire_U or live_wire_U
+wire_D = dead_wire_D or live_wire_D
+wire_L = dead_wire_L or live_wire_L
+wire_R = dead_wire_R or live_wire_R
+
+dead_wire = dead_wire_U or dead_wire_D or dead_wire_L or dead_wire_R
+live_wire = live_wire_U or live_wire_D or live_wire_L or live_wire_R
+wire = dead_wire or live_wire
+
+player = player_placing or player_hovering or player_configuring
+
+=======
+SOUNDS
+=======
+
+================
+COLLISIONLAYERS
+================
+
+Background
+
+component
+on_token
+ghost_on_token
+
+io_u
+io_d
+io_l
+io_r
+
+wire_U
+wire_D
+wire_L
+wire_R
+
+junction
+
+player
+
+
+======
+RULES
+======
+
+(PLAYER STATES)
+  (toggle batteries)
+  [action player battery_on]->[player_hovering battery_off]
+  [action player battery_off]->[player_hovering battery_on]
+
+  (configure gates)
+  [action player no player_configuring gate]->[player_configuring gate]
+  [action player_configuring]->[player_hovering]
+  
+  (place junction)
+  [action player_placing wire_u wire_d wire_l wire_r]->[player_placing junction wire_u wire_d wire_l wire_r]
+  [action player_placing junction]->[player_placing]
+
+  (toggle placement)
+  [action player_hovering]->[player_placing]
+  [action player_placing]->[player_hovering]
+
+(PLAYER ACTIONS)
+  (place wires)
+  left [> player_placing|]->[dead_wire_L|dead_wire_R player_placing]
+  right [> player_placing|]->[dead_wire_R|dead_wire_L player_placing]
+  up [> player_placing|]->[dead_wire_U|dead_wire_D player_placing]
+  down [> player_placing|]->[dead_wire_D|dead_wire_U player_placing]
+  
+  (configure gates)
+  [up player_configuring no IO_U]->[player_configuring input_U]
+  [down player_configuring no IO_D]->[player_configuring input_D]
+  [left player_configuring no IO_L]->[player_configuring input_L]
+  [right player_configuring no IO_R]->[player_configuring input_R]
+  
+  [up player_configuring input_U]->[player_configuring output_U]
+  [down player_configuring input_D]->[player_configuring output_D]
+  [left player_configuring input_L]->[player_configuring output_L]
+  [right player_configuring input_R]->[player_configuring output_R]
+  
+  [up player_configuring output_U]->[player_configuring]
+  [down player_configuring output_D]->[player_configuring]
+  [left player_configuring output_L]->[player_configuring]
+  [right player_configuring output_R]->[player_configuring]
+  
+
+[wire component]->[component]
+
+(depower wires at turn start)
+[live_wire_U]->[dead_wire_U]
+[live_wire_D]->[dead_wire_D]
+[live_wire_L]->[dead_wire_L]
+[live_wire_R]->[dead_wire_R]
+
+(power spreads thru wires)
+startloop
+    (power spreads from source)
+up    [dead_wire_U|battery_on]->[live_wire_U|battery_on]
+down  [dead_wire_D|battery_on]->[live_wire_D|battery_on]
+left  [dead_wire_L|battery_on]->[live_wire_L|battery_on]
+right [dead_wire_R|battery_on]->[live_wire_R|battery_on]
+
+up    [on_token output_U|dead_wire_D]->[on_token output_U|live_wire_D]
+down  [on_token output_D|dead_wire_U]->[on_token output_D|live_wire_U]
+left  [on_token output_L|dead_wire_R]->[on_token output_L|live_wire_R]
+right [on_token output_R|dead_wire_L]->[on_token output_R|live_wire_L]
+    
+	(power spreads between wire segments in the same tile)
+[live_wire no junction dead_wire_U]->[live_wire live_wire_U]
+[live_wire no junction dead_wire_D]->[live_wire live_wire_D]
+[live_wire no junction dead_wire_L]->[live_wire live_wire_L]
+[live_wire no junction dead_wire_R]->[live_wire live_wire_R]
+
+[live_wire_U dead_wire_D]->[live_wire_U live_wire_D]
+[live_wire_D dead_wire_U]->[live_wire_D live_wire_U]
+[live_wire_L dead_wire_R]->[live_wire_L live_wire_R]
+[live_wire_R dead_wire_L]->[live_wire_R live_wire_L]
+
+    (power runs along wires)
+up	  [live_wire_U|dead_wire_D]->[live_wire_U|live_wire_D]
+down  [live_wire_D|dead_wire_U]->[live_wire_D|live_wire_U]
+left  [live_wire_L|dead_wire_R]->[live_wire_L|live_wire_R]
+right [live_wire_R|dead_wire_L]->[live_wire_R|live_wire_L]
+endloop
+
+	(gates)
+(record gate states)
+[gate]->[gate ghost_on_token]
+[on_token ghost_on_token]->[on_token]
+
+(AND gate)
+up    [and_gate input_U|live_wire_D]->[and_gate on_token input_U|live_wire_D]
+down  [and_gate input_D|live_wire_U]->[and_gate on_token input_D|live_wire_U]
+left  [and_gate input_L|live_wire_R]->[and_gate on_token input_L|live_wire_R]
+right [and_gate input_R|live_wire_L]->[and_gate on_token input_R|live_wire_L]
+
+up    [and_gate on_token input_U|dead_wire_D]->[and_gate input_U|dead_wire_D]
+down  [and_gate on_token input_D|dead_wire_U]->[and_gate input_D|dead_wire_U]
+left  [and_gate on_token input_L|dead_wire_R]->[and_gate input_L|dead_wire_R]
+right [and_gate on_token input_R|dead_wire_L]->[and_gate input_R|dead_wire_L]
+
+(NAND gate)
+up    [nand_gate on_token input_U|live_wire_D]->[nand_gate input_U|live_wire_D]
+down  [nand_gate on_token input_D|live_wire_U]->[nand_gate input_D|live_wire_U]
+left  [nand_gate on_token input_L|live_wire_R]->[nand_gate input_L|live_wire_R]
+right [nand_gate on_token input_R|live_wire_L]->[nand_gate input_R|live_wire_L]
+
+up    [nand_gate no on_token input_U|dead_wire_D]->[nand_gate on_token input_U|dead_wire_D]
+down  [nand_gate no on_token input_D|dead_wire_U]->[nand_gate on_token input_D|dead_wire_U]
+left  [nand_gate no on_token input_L|dead_wire_R]->[nand_gate on_token input_L|dead_wire_R]
+right [nand_gate no on_token input_R|dead_wire_L]->[nand_gate on_token input_R|dead_wire_L]
+
+[gate ghost_on_token on_token]->[gate ghost_on_token on_token]again
+[gate no ghost_on_token no on_token]->[gate]again
+[ghost_on_token]->[]
+
+==============
+WINCONDITIONS
+==============
+
+=======
+LEVELS
+=======
+
+................
+..a.............
+........a.......
+.....n..........
+..........n.....
+..n....n........
+.....a......a...
+..p.n...n.......
+............n...
+.....b.b.a......
+................
